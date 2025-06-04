@@ -1,0 +1,75 @@
+import os
+import sys
+import argparse
+
+"""해야할 거: 코드 정리, 개념공부"""
+"""1. parser 관련 명령어들 main()으로 옮기기
+   2. cat을 쓸 때 지금 -l만 할 수 있음. 나머지 것도 될수있도록 구현
+   3. 좀 더 깔끔하고 효율적으로 코드 리팩토링 하기."""
+"""특히 stdin 명령어 공부하기 (https://veggie-garden.tistory.com/15#google_vignette)"""
+
+def count_word_frequency(text):
+    words = text.split() # get rid of spaces between tokens
+    frequency = {}
+
+    for word in words:
+        word = word.lower().strip(",.!?") # make words lower-cased, deleting those symbols
+        if word not in frequency:
+            frequency[word] = 1
+        else:
+            frequency[word] += 1
+
+    return frequency
+
+# move lines that are related to parsers under __name___
+parser = argparse.ArgumentParser(
+    prog='A small wc tool',
+    description = 'word, line, character, and byte count',
+    epilog='Wish: I hope it works'
+    )
+
+parser.add_argument('filename', help = 'The file to read', nargs='?', default=None) # positional argument
+parser.add_argument('-c', '--count', help = 'Count the number of bytes in a file',
+                    action='store_true') # optional argument marked with hyphens
+parser.add_argument('-l', '--lines', help = 'Count the number of lines in a file',
+                    action='store_true')
+parser.add_argument('-w', '--words', help = 'Count the number of words in a file',
+                    action='store_true')
+parser.add_argument('-m', '--characters', help = 'Count the number of chracters in a file',
+                    action='store_true')
+args = parser.parse_args()
+    
+if args.count:
+    number_of_byte = os.path.getsize(args.filename)
+    print(number_of_byte, args.filename)
+elif args.lines:
+    if args.filename:
+        with open(args.filename, 'r') as file_data:
+            number_of_lines = len(file_data.readlines())
+            print(number_of_lines, args.filename)
+    else: # if filename is not given
+        lines = sys.stdin.readlines() # use standard input
+        print(len(lines))
+elif args.words:
+    with open(args.filename, 'r') as file_data:
+        text = file_data.read()
+        word_frequency = count_word_frequency(text)
+        total_frequency = sum(word_frequency.values())
+        print(total_frequency, args.filename)
+elif args.characters:
+    with open(args.filename, 'rb') as file_data: # read it byte-by-byte. This is because of CRLF of Windows and LF of Linux/Mac.
+        byte_content = file_data.read()
+        text = byte_content.decode('utf-8')
+        number_of_characters = len(text)
+        print(number_of_characters, args.filename)
+else:
+    with open(args.filename, 'rb') as file_data: # make it readable
+        byte_content = file_data.read()
+        text = byte_content.decode('utf-8')
+        number_of_byte = os.path.getsize(args.filename)
+        number_of_lines = len(file_data.readlines())
+        word_frequency = count_word_frequency(text)
+        total_frequency = sum(word_frequency.values())
+        number_of_characters = len(text)
+        print(number_of_byte, total_frequency, number_of_characters, args.filename)
+
